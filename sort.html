@@ -223,7 +223,7 @@ function showGaps(compName) {
     const matches = employeeData.filter(emp => emp.gaps.includes(compName));
     
     // Display the title with the total count
-    title.innerText = "Employees with GAP: " + compName + " (Total Personnel: " + matches.length + ")";
+    title.innerText = "Employees with GAP: " + compName + " (" + matches.length + ")";
     list.innerHTML = "";
 
     if (matches.length > 0) {
