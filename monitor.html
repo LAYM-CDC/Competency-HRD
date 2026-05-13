@@ -181,9 +181,26 @@
         .border-orange { border-left: 6px solid var(--orange); }
 
         /* Modal */
+        /* Update your existing .modal-overlay */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000;
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(0,0,0,0.4); /* Reduced opacity for better blur visibility */
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000;
+            backdrop-filter: blur(5px); /* This creates the blur effect */
+            -webkit-backdrop-filter: blur(5px); /* Safari support */
+        }
+        
+        /* Add this new class to handle the background blur */
+        .content-blur {
+            filter: blur(4px);
+            transition: filter 0.3s ease;
         }
         .modal-content {
             background: white; width: 85%; max-width: 1000px; max-height: 85vh;
