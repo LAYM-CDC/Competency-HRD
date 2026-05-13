@@ -138,6 +138,12 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             cursor: pointer;
             border: 1px solid #eee;
+            /* This line enables the smooth animation */
+            transition: transform 0.2s ease, box-shadow 0.2s ease; 
+        }
+        .tile:hover {
+            transform: translateX(8px); /* Moves the tile to the right */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Adds a deeper shadow */
         }
         .tile h3 { margin: 0 0 5px 0; font-size: 1rem; color: #555; }
         .tile .count { font-size: 1.8rem; font-weight: bold; color: var(--header-bg); }
