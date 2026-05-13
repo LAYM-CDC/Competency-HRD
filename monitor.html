@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2025 Personnel Competency Dashboard</title>
+    <title>Monitoring Tool</title>
     <style>
         :root {
             --primary-bg: #f4f7f6;
@@ -165,7 +165,7 @@
         .search-box {
             flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid #ddd; outline: none;
         }
-        .stats-badge { background: var(--header-bg); color: white; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        .stats-badge {color: #2c3e50; font-weight: bold; }
 
         .border-green { border-left: 6px solid var(--success); }
         .border-red { border-left: 6px solid var(--danger); }
@@ -191,7 +191,7 @@
 
 <header>
     <img src="https://www.clark.com.ph/images/2024/ClarkLogoPNGhires_White.png" alt="Logo" class="logo">
-    <h1>2025 Personnel Competency Dashboard</h1>
+    <h1>Competency Monitoring Dashboard</h1>
     <a href="index.html" class="btn">HOME</a>
 </header>
 
@@ -212,7 +212,7 @@
                         <th onclick="sortTable('position')">Position</th>
                         <th onclick="sortTable('division')">Div</th>
                         <th onclick="sortTable('group')">Group</th>
-                        <th style="text-align:center" onclick="sortTable('movement')">Mov</th>
+                        <th style="text-align:center" onclick="sortTable('movement')">Movement</th>
                         <th style="text-align:center" onclick="sortTable('2024')">2024</th>
                         <th style="text-align:center" onclick="sortTable('2025')">2025</th>
                     </tr>
@@ -246,7 +246,7 @@
     </div>
 </div>
 
-<footer>Powered by LAYM HRD Solutions</footer>
+<footer>Developed by LAYM HRD Solutions</footer>
 
 <script>
     // FULL 593 RECORDS DATASET
@@ -6207,12 +6207,12 @@
 
     function renderSidebar() {
         const categories = [
-            { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
-            { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not 2025', filter: r => r['2024'] == 1 && r['2025'] == 0 },
-            { label: 'New Qualified', border: 'border-blue', desc: 'Newly qualified (nq)', filter: r => r.movement === 'nq' },
-            { label: 'Disqualified', border: 'border-yellow', desc: 'Disqualified (dq)', filter: r => r.movement === 'dq' },
-            { label: '2024 Total', border: 'border-purple', desc: 'Total competent 2024', filter: r => r['2024'] == 1 },
-            { label: '2025 Total', border: 'border-orange', desc: 'Total competent 2025', filter: r => r['2025'] == 1 },
+            { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not in 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
+            { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not in 2025', filter: r => r['2024'] == 1 && r['2025'] == 0 },
+            { label: 'New Qualified', border: 'border-blue', desc: 'Qualified in 2025 but not in 2024', filter: r => r.movement === 'nq' },
+            { label: 'Disqualified', border: 'border-yellow', desc: 'Qualified in 2024 but not in 2025', filter: r => r.movement === 'dq' },
+            { label: '2024 Total', border: 'border-purple', desc: 'Total Qualified Competent 2024', filter: r => r['2024'] == 1 },
+            { label: '2025 Total', border: 'border-orange', desc: 'Total Qualified Competent 2025', filter: r => r['2025'] == 1 },
         ];
         sidebar.innerHTML = '';
         categories.forEach(cat => {
