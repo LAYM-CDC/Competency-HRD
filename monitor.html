@@ -1,0 +1,6276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025 Personnel Competency Dashboard</title>
+    <style>
+        :root {
+            --primary-bg: #f4f7f6;
+            --header-bg: #2c3e50;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --info: #3498db;
+            --warning: #f1c40f;
+            --purple: #9b59b6;
+            --orange: #e67e22;
+            --text-dark: #333;
+        }
+
+        /* Essential for "No Global Scroll" */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevents the whole site from scrolling */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--primary-bg);
+            color: var(--text-dark);
+        }
+
+        /* Fixed Header */
+        header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 0.7rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+        .logo { height: 45px; }
+        header h1 { margin: 0; font-size: 1.4rem; flex-grow: 1; text-align: center; }
+
+        /* Main Layout Container */
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden; /* Contains the sidebar and main section */
+        }
+
+        /* Sidebar - Scrollable independently if tiles exceed height */
+        aside {
+            width: 320px;
+            background: #fff;
+            border-right: 1px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        /* Main Section */
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0; /* Prevents flex items from breaking layout */
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        /* The Scrollable Table Container */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            flex: 1; /* Takes up remaining vertical space */
+            overflow-y: auto; /* Enables vertical scrolling inside the container */
+            border: 1px solid #eee;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        /* Sticky Table Headers */
+        thead th {
+            background: #f8f9fa;
+            padding: 15px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-bottom: 2px solid #eee;
+            position: sticky;
+            top: 0; /* Keeps headers visible while scrolling the container */
+            z-index: 10;
+        }
+
+        td { padding: 10px 15px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        tr:hover { background-color: #f9f9f9; }
+
+        /* Visual Elements */
+        .tile {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 1px solid #eee;
+        }
+        .tile:hover { transform: translateX(5px); }
+        .tile h3 { margin: 0 0 5px 0; font-size: 1rem; color: #555; }
+        .tile .count { font-size: 1.8rem; font-weight: bold; color: var(--header-bg); }
+        
+        .circle {
+            width: 26px; height: 26px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 0.75rem;
+        }
+        .bg-competent { background-color: var(--success); }
+        .bg-not { background-color: var(--danger); }
+        .bg-dq { background-color: var(--warning); color: #333; }
+        .bg-nq { background-color: var(--info); }
+        .bg-na { background-color: var(--orange); }
+
+        footer {
+            background: var(--header-bg);
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 10px;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .search-box {
+            flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid #ddd; outline: none;
+        }
+        .stats-badge {color: #2c3e50; border-radius: 5px; font-weight: bold; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background: white; width: 85%; max-width: 1000px; max-height: 85vh;
+            border-radius: 12px; display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-header { padding: 20px; background: var(--header-bg); color: white; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 0; overflow-y: auto; flex: 1; }
+
+        .border-green { border-left: 6px solid var(--success); }
+        .border-red { border-left: 6px solid var(--danger); }
+        .border-blue { border-left: 6px solid var(--info); }
+        .border-yellow { border-left: 6px solid var(--warning); }
+        .border-purple { border-left: 6px solid var(--purple); }
+        .border-orange { border-left: 6px solid var(--orange); }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="https://www.clark.com.ph/images/2024/ClarkLogoPNGhires_White.png" alt="Logo" class="logo">
+    <h1>Competency Monitoring Dashboard</h1>
+    <div style="width: 150px;"></div>
+</header>
+
+<div class="container">
+    <aside id="sidebar"></aside>
+
+    <main>
+        <div class="top-bar">
+            <input type="text" id="globalSearch" class="search-box" placeholder="Search Master List...">
+            <div class="stats-badge" id="totalCountBadge">Total Records: 0</div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('names')">Name</th>
+                        <th onclick="sortTable('position')">Position</th>
+                        <th onclick="sortTable('division')">Div</th>
+                        <th onclick="sortTable('group')">Group</th>
+                        <th style="text-align:center" onclick="sortTable('movement')">Movement</th>
+                        <th style="text-align:center" onclick="sortTable('2024')">2024</th>
+                        <th style="text-align:center" onclick="sortTable('2025')">2025</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div>
+                <h2 id="modalTitle" style="margin:0">Category List</h2>
+                <small id="modalSubtitle"></small>
+            </div>
+            <span style="cursor:pointer; font-size:2rem" onclick="closeModal()">&times;</span>
+        </div>
+        <div style="padding: 15px 20px; border-bottom: 1px solid #eee; background: #fdfdfd;">
+            <input type="text" id="modalSearch" class="search-box" placeholder="Filter category..." style="width: 100%; box-sizing: border-box;">
+        </div>
+        <div class="modal-body">
+            <table style="width:100%">
+                <thead style="background:#f1f1f1">
+                    <tr><th>Name</th><th>Position</th><th>Division</th><th>Group</th></tr>
+                </thead>
+                <tbody id="modalTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<footer>Developed by LAYM HRD Solutions</footer>
+
+<script>
+    // PERSONNEL_DATA JSON (Replace with full data)
+    const PERSONNEL_DATA = [
+
+    {
+        "key": 1,
+        "names": "Ferrer, Allan N.",
+        "position": "Accountant II - Billing",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 2,
+        "names": "Vino, Marie Jane T.",
+        "position": "Accountant II - Bookkeeping",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 3,
+        "names": "Gomez, Glory G.",
+        "position": "Accountant II - Budget",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 4,
+        "names": "Naluz, Miriam M.",
+        "position": "Accountant II - Payroll",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 5,
+        "names": "Cunanan, Albert T.",
+        "position": "Accountant II - Processing",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 6,
+        "names": "Sicat, Rhea S.",
+        "position": "Accountant II - Processing",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 7,
+        "names": "Pineda, Ma. Carmelita A.",
+        "position": "Accountant III",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 8,
+        "names": "Castro, Arvin M.",
+        "position": "Accountant III - Billing",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 9,
+        "names": "Sicat, Eugene B.",
+        "position": "Accountant III - Billing",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 10,
+        "names": "Patawaran, Mary Ann A.",
+        "position": "Accountant III - Payroll",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 11,
+        "names": "Paras, Alizaido F.",
+        "position": "Assistant Vice-President",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 12,
+        "names": "Dayao, Jesseline S.",
+        "position": "Manager",
+        "division": "AD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 13,
+        "names": "Lopez, Rico T.",
+        "position": "Administrative Assistant IV",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 14,
+        "names": "Manalo, Marlon P.",
+        "position": "Administrative Assistant IV",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 15,
+        "names": "Nucup, Alexander D.",
+        "position": "Administrative Assistant IV",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 16,
+        "names": "Padua, Christopher G.",
+        "position": "Administrative Assistant IV",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 17,
+        "names": "Samson, Rameses V.",
+        "position": "Administrative Assistant IV",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 18,
+        "names": "Pineda, Magdalena P.",
+        "position": "Administrative Officer I",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 19,
+        "names": "Casenas, Doni Rey C.",
+        "position": "Administrative Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 20,
+        "names": "Isip, Dexter C.",
+        "position": "Administrative Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 21,
+        "names": "Nogoy, Peter C.",
+        "position": "Administrative Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 22,
+        "names": "Paule, Carlota M.",
+        "position": "Administrative Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 23,
+        "names": "Santos, Jovilen G.",
+        "position": "Administrative Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 24,
+        "names": "Yalung, Walter D.",
+        "position": "Administrative Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 25,
+        "names": "Yusi, Christopher Q.",
+        "position": "Administrative Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 26,
+        "names": "Ang, Anna Lou V.",
+        "position": "Administrative Officer III",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 27,
+        "names": "Chico, Anne C.",
+        "position": "Administrative Officer III",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 28,
+        "names": "Manalili, Rosanna D.",
+        "position": "Administrative Officer III",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 29,
+        "names": "De Guzman, Ariel A.",
+        "position": "Auto Mechanic A",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 30,
+        "names": "Escoto, Randie L.",
+        "position": "Auto Mechanic A",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 31,
+        "names": "Lopez, Ronaldo M.",
+        "position": "Auto Mechanic A",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 32,
+        "names": "Abero, Eric L.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 33,
+        "names": "Alfonso, John John C.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 34,
+        "names": "Bautista, Ronaldo B.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 35,
+        "names": "Bernardino, Roberto P.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 36,
+        "names": "De Jesus, Rian G.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 37,
+        "names": "Delfin, Jr., Ernesto O.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 38,
+        "names": "Duya, Aries P.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 39,
+        "names": "Fabros, Aldrin C.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 40,
+        "names": "Ferrer, Vicente P.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 41,
+        "names": "Musni, Marvin R.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 42,
+        "names": "Palo, George L.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 43,
+        "names": "Paltep, Joseph D.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 44,
+        "names": "Salac, Arnold H.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 45,
+        "names": "Tero, Angelito L.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 46,
+        "names": "Urfano, Sydric R.",
+        "position": "Driver Courier II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 47,
+        "names": "Dayola, Fredeswindo S.",
+        "position": "Heavy Equipment Operator",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 48,
+        "names": "Mendoza, Ahmed M.",
+        "position": "Manager",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 49,
+        "names": "Caballa, Nadine Kyrah D.",
+        "position": "Project Development Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 50,
+        "names": "Casaclang, Normangel C.",
+        "position": "Project Development Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 51,
+        "names": "Tiotuico, Anna Marie N.",
+        "position": "Project Development Officer II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 52,
+        "names": "Timpug, Edison J.",
+        "position": "Project Development Officer III",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 53,
+        "names": "Bucal, Juanito B.",
+        "position": "Sr. Auto Mechanic",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 54,
+        "names": "Santos, Jedd Hansel D.",
+        "position": "Warehouseman II",
+        "division": "AMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 55,
+        "names": "Narciso, Rommel C.",
+        "position": "Assistant Vice-President",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 56,
+        "names": "Mejia, Hector C.",
+        "position": "Capacity Building Assistant",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 57,
+        "names": "Onofre, Jerika P.",
+        "position": "Capacity Building Assistant",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 58,
+        "names": "Rivera, Armin D.",
+        "position": "Capacity Building Officer II",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 59,
+        "names": "Roque, Lea M.",
+        "position": "Capacity Building Officer II",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 60,
+        "names": "Marzan, Lycia D.",
+        "position": "Capacity Building Officer III",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 61,
+        "names": "Antonio, Ronald T.",
+        "position": "Community Affairs Officer IV",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 62,
+        "names": "Lintag, Alfred M.",
+        "position": "Community Relations & Social Services Assistant",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 63,
+        "names": "Manalo, Lou Anne T.",
+        "position": "Community Relations & Social Services Assistant",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 64,
+        "names": "Matias, Agnes L.",
+        "position": "Community Relations & Social Services Officer III",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 65,
+        "names": "Pingol, Leila R.",
+        "position": "Community Relations & Social Services Officer III",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 66,
+        "names": "Linga, Josielyn M.",
+        "position": "Manager",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 67,
+        "names": "Arcilla, Alexandrea Reeva V.",
+        "position": "Skills & Placement Assistant",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 68,
+        "names": "Dizon, Kriezelle M.",
+        "position": "Skills & Placement Assistant",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 69,
+        "names": "Gomez, Randy G.",
+        "position": "Skills & Placement Officer II",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 70,
+        "names": "Tolentino, Jamille S.",
+        "position": "Skills & Placement Officer II",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 71,
+        "names": "Marasigan, Lourdes L.",
+        "position": "Skills & Placement Officer III",
+        "division": "CSRPD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 72,
+        "names": "Limin, Darwin C.",
+        "position": "Administrative Aide IV (CDC Sports Facility)",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 73,
+        "names": "Maniulit, Annabelle M.",
+        "position": "Administrative Aide IV (Daycare)",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 74,
+        "names": "Tarenio, Jr. Bonifacio O.",
+        "position": "Assistant Vice-President",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 75,
+        "names": "Abella, Katherine T.",
+        "position": "Human Resources Management Assistant II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 76,
+        "names": "Castro, Marissa M.",
+        "position": "Human Resources Management Assistant II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 77,
+        "names": "Joves, Aimee V.",
+        "position": "Human Resources Management Assistant II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 78,
+        "names": "Sanchez, Joemar N.",
+        "position": "Human Resources Management Assistant II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 79,
+        "names": "Samia, Justine T.",
+        "position": "Human Resources Management Assistant II (Benefits)",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 80,
+        "names": "Alamares, Karen H.",
+        "position": "Human Resources Management Officer II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 81,
+        "names": "Manese, Kristine Joy S.",
+        "position": "Human Resources Management Officer II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 82,
+        "names": "Ocampo, Mellanie T.",
+        "position": "Human Resources Management Officer II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 83,
+        "names": "Reynolds, Raquel M.",
+        "position": "Human Resources Management Officer II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 84,
+        "names": "Romero, Cloyd C.",
+        "position": "Human Resources Management Officer II",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 85,
+        "names": "Cato, Daisy May C.",
+        "position": "Human Resources Management Officer II RPT",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 86,
+        "names": "Capid, Maria Socorro Simonette L.",
+        "position": "Human Resources Management Officer III",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 87,
+        "names": "Daquis, Elaine L.",
+        "position": "Human Resources Management Officer III",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 88,
+        "names": "Katigbak, Joanne Marie C.",
+        "position": "Human Resources Management Officer III",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 89,
+        "names": "Dizon, Eunice May P.",
+        "position": "Human Resources Management Officer IV",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 90,
+        "names": "Yusi, Rachelle S.",
+        "position": "Manager",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 91,
+        "names": "Castillo, Michael D.",
+        "position": "Recreation and Welfare Services Assistant (Fitness)",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 92,
+        "names": "Siron, Christopher L.",
+        "position": "Recreation and Welfare Services Officer II (Fitness)",
+        "division": "HRD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 93,
+        "names": "Esguerra, Jessa C.",
+        "position": "Executive Assistant II",
+        "division": "OVP",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 94,
+        "names": "Mallari, Mary Anne T.",
+        "position": "Administrative Officer I",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 95,
+        "names": "Bautista, Jennileen C.",
+        "position": "Administrative Officer II",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 96,
+        "names": "Sembrano, Albert Sebastian D.",
+        "position": "Administrative Officer II",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 97,
+        "names": "Sison, Jerome B.",
+        "position": "Administrative Officer II",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 98,
+        "names": "Tanhueco, Jr., Florante G.",
+        "position": "Administrative Officer II",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 99,
+        "names": "Timpug, Venus V.",
+        "position": "Administrative Officer II",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 100,
+        "names": "Cordero, Jr., Francisco R.",
+        "position": "Administrative Officer III",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 101,
+        "names": "Lagman, Lancel John L.",
+        "position": "Administrative Officer IV",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 102,
+        "names": "Deang, Rodgardo M.",
+        "position": "Manager",
+        "division": "PD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 103,
+        "names": "Limio, Jedd C.",
+        "position": "Administrative Assistant IV",
+        "division": "PD-BAC",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 104,
+        "names": "Medina, Joe Marie Dominic M.",
+        "position": "Administrative Assistant IV",
+        "division": "PD-BAC",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 105,
+        "names": "Cordero, Chenaryl M.",
+        "position": "Administrative Officer II",
+        "division": "PD-BAC",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 106,
+        "names": "Mallari, Evelyn U.",
+        "position": "Administrative Officer II",
+        "division": "PD-BAC",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 107,
+        "names": "De Dios, Rolet T.",
+        "position": "Administrative Officer III",
+        "division": "PD-BAC",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 108,
+        "names": "Faller, Leonora A.",
+        "position": "Guesthouse Caretaker",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 109,
+        "names": "Reyes, Analin P.",
+        "position": "Guesthouse Caretaker",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 110,
+        "names": "Poyaoan, Josephine V.",
+        "position": "Manager",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 111,
+        "names": "Galang, Russel M.",
+        "position": "Property Officer I",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 112,
+        "names": "Guzman, Jenzen O.",
+        "position": "Property Officer I",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 113,
+        "names": "Manarang, Vismin L.",
+        "position": "Property Officer I (Inventory)",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 114,
+        "names": "Cruz, Raymund Erwin B.",
+        "position": "Property Officer II",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 115,
+        "names": "Santos, Glenn P.",
+        "position": "Property Officer II",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 116,
+        "names": "Cunanan, Jr. Nicolas P.",
+        "position": "Property Officer II - House",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 117,
+        "names": "Fernandez, Francis P.",
+        "position": "Property Officer II - Insurance",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 118,
+        "names": "Dale, Carmelita Y.",
+        "position": "Property Officer III",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 119,
+        "names": "Isip, Lowela L.",
+        "position": "Property Officer III",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 120,
+        "names": "Reyes, Archimedes C.",
+        "position": "Property Officer IV",
+        "division": "PMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 121,
+        "names": "Lerum, Sarah S.",
+        "position": "Manager",
+        "division": "RMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 122,
+        "names": "Fernandez, Blezilda E.",
+        "position": "Records Assistant",
+        "division": "RMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 123,
+        "names": "Manlapat, Ivan Louis M.",
+        "position": "Records Assistant",
+        "division": "RMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 124,
+        "names": "Marzan, Kriel M.",
+        "position": "Records Assistant",
+        "division": "RMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 125,
+        "names": "Wong, Aaron D.",
+        "position": "Records Officer II",
+        "division": "RMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 126,
+        "names": "Dela Cruz, Othello C.",
+        "position": "Records Officer III",
+        "division": "RMD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 127,
+        "names": "Suller, Jr., Alberto M.",
+        "position": "Records Officer III",
+        "division": "RMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 128,
+        "names": "Mujar, Belinda K.",
+        "position": "Records Officer IV",
+        "division": "RMD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 129,
+        "names": "Concepcion, Sarah Jane C.",
+        "position": "Cashier 1/Collection Assistant",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 130,
+        "names": "Adriano, Monica Joy L.",
+        "position": "Cashier I",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 131,
+        "names": "Dayrit, Michaela A.",
+        "position": "Cashier I",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 132,
+        "names": "Nakpil, Maria Victoria A.",
+        "position": "Cashier I",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 133,
+        "names": "Nozawa, Louella T.",
+        "position": "Cashier I",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 134,
+        "names": "Capulong, Jesusa A.",
+        "position": "Cashier II",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 135,
+        "names": "Estrada, Pelita P.",
+        "position": "Cashier II",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 136,
+        "names": "Tayag, Rhoneil A.",
+        "position": "Cashier II",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 137,
+        "names": "Villanueva, Maynard D.",
+        "position": "Cashier II",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 138,
+        "names": "Baluyut, Janet D.",
+        "position": "Cashier III",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 139,
+        "names": "Lozano, Bryan G.",
+        "position": "Financial and Management Officer I",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 140,
+        "names": "Yturralde, Jesusa G.",
+        "position": "Manager",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 141,
+        "names": "Pineda, Jeannette M.",
+        "position": "Treasury Specialist A",
+        "division": "TD",
+        "group": "AFG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 142,
+        "names": "Dimalanta, Frances Ruth C.",
+        "position": "Communications Officer I",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 143,
+        "names": "Arceo, Princess Camille B.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 144,
+        "names": "Calderon, Rodel M.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 145,
+        "names": "Cayanan, Ronald L.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 146,
+        "names": "Dayao, Precious Mariz M.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 147,
+        "names": "Fabian, Aubrey Bastian P.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 148,
+        "names": "Marcelino, Jr., Rodrigo T.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 149,
+        "names": "Miranda, Mark Rainier",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 150,
+        "names": "Quinto, Ranier L.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 151,
+        "names": "Ruiz, Benjamin B.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 152,
+        "names": "Tandang, Karriza Dawn P.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 153,
+        "names": "Zapata, Alvin D.",
+        "position": "Emergency Medical Technician (Paramedic)",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 154,
+        "names": "David, Psalms Iriana C.",
+        "position": "Medical Technologist II",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 155,
+        "names": "Peralta, Ruben C.",
+        "position": "Project Development Officer I",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 156,
+        "names": "David, Aline C.",
+        "position": "Public Health Nurse II",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 157,
+        "names": "Orejas, Jobelle",
+        "position": "Public Health Nurse II",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 158,
+        "names": "Rucks, Sarah E.",
+        "position": "Public Health Nurse II",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 159,
+        "names": "Capili, Socorro L.",
+        "position": "Public Health Nurse III",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 160,
+        "names": "Malonzo, Ester S.",
+        "position": "Sanitation Inspector I",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 161,
+        "names": "Montallana, Angeliza H.",
+        "position": "Sanitation Inspector I",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 162,
+        "names": "Paras, Onalee S.",
+        "position": "Sanitation Inspector I",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 163,
+        "names": "Cordero, Raymond A.",
+        "position": "Sanitation Inspector II",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 164,
+        "names": "Tongol, Lady Dianne G.",
+        "position": "Supervising Sanitation Specialist",
+        "division": "HSD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 165,
+        "names": "Ocampo, Thelma C.",
+        "position": "Assistant Vice-President",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 166,
+        "names": "Danan, Johann Lloyd P.",
+        "position": "Business Development Analyst",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 167,
+        "names": "Galang, Anne Jobelle V.",
+        "position": "Business Development Analyst",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 168,
+        "names": "Mangalino, Nicole R.",
+        "position": "Business Development Analyst",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 169,
+        "names": "San Andres, Ena Rizia P.",
+        "position": "Business Development Analyst",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 170,
+        "names": "Balagot, Neilsen M.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 171,
+        "names": "De Leon, Julie Ann R.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 172,
+        "names": "Galang, Evelyn S.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 173,
+        "names": "Garcia, Irish Ann P.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 174,
+        "names": "Turla, Lucita C.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 175,
+        "names": "Vinculado, Rita D.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 176,
+        "names": "Barte, Willy D.",
+        "position": "Business Development Specialist II",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 177,
+        "names": "Manaloto, Joanna Marie B.",
+        "position": "Business Development Specialist II",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 178,
+        "names": "Plateros, Raidis G.",
+        "position": "Business Development Specialist II",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 179,
+        "names": "Santos, Eliza L.",
+        "position": "Business Development Specialist II",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 180,
+        "names": "Mendoza, Kate Moira B.",
+        "position": "Investment Promotions Analyst",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 181,
+        "names": "Diaz, Riza B.",
+        "position": "Investment Promotions Specialist I",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 182,
+        "names": "Gepte, Maricris C.",
+        "position": "Manager",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 183,
+        "names": "Franco, Joseph Robert S.",
+        "position": "Supervising Business Specialist",
+        "division": "IPD-I",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 184,
+        "names": "Rondolo, Eric S.",
+        "position": "Business Development Analyst",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 185,
+        "names": "Simbahan, Sbe B.",
+        "position": "Business Development Analyst",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 186,
+        "names": "Arenas, Rosabelle I.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 187,
+        "names": "Duarte, Jr., Danilo R.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 188,
+        "names": "Pascual, Myra Grace B.",
+        "position": "Business Development Specialist I",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 189,
+        "names": "Narciso, Annette C.",
+        "position": "Business Development Specialist II",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 190,
+        "names": "Paras, Eugene L.",
+        "position": "Business Development Specialist II",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 191,
+        "names": "Punsalan, Myriam R.",
+        "position": "Business Development Specialist II",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 192,
+        "names": "Santioque, Hazel D.",
+        "position": "Business Development Specialist II",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 193,
+        "names": "Novilla, Brenda M.",
+        "position": "Investment Promotions Analyst",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 194,
+        "names": "Anicete, Marilen L.",
+        "position": "Investment Promotions Specialist I",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 195,
+        "names": "Julian, Noemi B.",
+        "position": "Manager",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 196,
+        "names": "Pattaui, Erwin C.",
+        "position": "Supervising Marketing Specialist",
+        "division": "IPD-II",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 197,
+        "names": "Jao, Christian Edison M.",
+        "position": "Executive Assistant II",
+        "division": "OVP",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 198,
+        "names": "Perez, Rodem R.",
+        "position": "Assistant Vice-President",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 199,
+        "names": "Gutierrez, Marigrace M.",
+        "position": "Manager",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 200,
+        "names": "Cabarle, Judy Ann V.",
+        "position": "Sr. Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 201,
+        "names": "Co, Andrea-Gayle B.",
+        "position": "Sr. Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 202,
+        "names": "Flores, Robin G.",
+        "position": "Sr. Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 203,
+        "names": "Hernandez, Priscila T.",
+        "position": "Supervising Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 204,
+        "names": "Bajador, Rosalinda E.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 205,
+        "names": "Caballa, Justin Nico D.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 206,
+        "names": "Carbungco, Renelito C.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 207,
+        "names": "Catacutan, Beverly C.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 208,
+        "names": "Consignado, Mary Abigail D.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 209,
+        "names": "Delantar, Jaypee A.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 210,
+        "names": "Florencio, Adrianne T.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 211,
+        "names": "Henson, Orson L.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 212,
+        "names": "Lacsina, Ysrael D.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 213,
+        "names": "Magat, Kurvey Bricks",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 214,
+        "names": "Mercado, Aljhon N.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 215,
+        "names": "Nicolas, Jun S.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 216,
+        "names": "Relevo, John Paul B.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 217,
+        "names": "Santos, Senen G.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 218,
+        "names": "Sicat, Anthony D.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 219,
+        "names": "Sicat, Joan Marie A.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 220,
+        "names": "Tanglao, Ayron S.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 221,
+        "names": "Tero, Angelo B.",
+        "position": "Trade Analyst I",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 222,
+        "names": "David, Clariza P.",
+        "position": "Trade Analyst II",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 223,
+        "names": "Yabut, Genesis L.",
+        "position": "Trade Analyst II",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 224,
+        "names": "Basco, Angelita T.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 225,
+        "names": "Butiu, Pacifico N.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 226,
+        "names": "Dela Rosa, Rogel S.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 227,
+        "names": "Escoto, Lorna P.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 228,
+        "names": "Garcia, Joseph G.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 229,
+        "names": "Garcia, Marites S.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 230,
+        "names": "Ibay, Jayson L.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 231,
+        "names": "Manalastas, Benjie S.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 232,
+        "names": "Sagmit, Lani C.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 233,
+        "names": "Santos, Edwin R.",
+        "position": "Trade Specialist",
+        "division": "TFD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 234,
+        "names": "Lorenzo, Elenita S.",
+        "position": "Manager",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 235,
+        "names": "Lansangan, Renz F.",
+        "position": "Tourism Assistant",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 236,
+        "names": "Rodriguez, Rosemarie",
+        "position": "Tourism Assistant",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 237,
+        "names": "Supan, Lou Errol D.",
+        "position": "Tourism Assistant",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 238,
+        "names": "Felker, Mark Alain B.",
+        "position": "Tourism Officer I",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 239,
+        "names": "Soriano, Catherine Rose C.",
+        "position": "Tourism Officer I",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 240,
+        "names": "Guevarra, Marlon Y.",
+        "position": "Tourism Officer II",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 241,
+        "names": "Mallari, Catherine Joy E.",
+        "position": "Tourism Officer II",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 242,
+        "names": "San Juan, Carmen Sofia R.",
+        "position": "Tourism Officer II",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 243,
+        "names": "Tolentino, Joanne Bernadette A.",
+        "position": "Tourism Officer II",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 244,
+        "names": "Mejia, Ian Paulo O.",
+        "position": "Tourism Officer III",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 245,
+        "names": "San Andres, Igal Jada P.",
+        "position": "Tourism Officer III",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 246,
+        "names": "Lacson, Charisse Marie F.",
+        "position": "Tourism Officer IV",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 247,
+        "names": "Dizon, Erwin C.",
+        "position": "Tourism Operations Assistant",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 248,
+        "names": "Santiago, Burt O.",
+        "position": "Tourism Operations Assistant",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 249,
+        "names": "Lampa, John Michael P.",
+        "position": "Tourism Operations Assistant I",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 250,
+        "names": "Tolentino, Wilgien Mark G.",
+        "position": "Tourism Operations Assistant I",
+        "division": "TPD",
+        "group": "BDBEG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 251,
+        "names": "Rosales, Donny B.",
+        "position": "Admin. Assistant IV",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 252,
+        "names": "Canlas, Luisito S.",
+        "position": "Electrician II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 253,
+        "names": "Galang, Marinel K.",
+        "position": "Electrician II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 254,
+        "names": "Gumiran, Antonio",
+        "position": "Electrician II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 255,
+        "names": "Sanchez, Robbie L.",
+        "position": "Electrician II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 256,
+        "names": "Sigua, Jose S.",
+        "position": "Electrician II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 257,
+        "names": "Tadifa, Archie A.",
+        "position": "Electrician II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 258,
+        "names": "Arpilleda, Jr., Constante L.",
+        "position": "Engineer III",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 259,
+        "names": "Dela Cruz, Reuben H.",
+        "position": "Engineer III",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 260,
+        "names": "Manalo, Jr., Pepito G.",
+        "position": "Engineer III",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 261,
+        "names": "Ragunton, Ronald C.",
+        "position": "Engineer III",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 262,
+        "names": "Soriano, Arvin L.",
+        "position": "Engineer III",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 263,
+        "names": "Vitug, Marie Antonette G.",
+        "position": "Engineer III",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 264,
+        "names": "Sibug, Arnold P.",
+        "position": "Engineer III (detailed to CMD as Administrative Officer III)",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 265,
+        "names": "Pineda, Jacqueline D.",
+        "position": "Engineer III (Drainage Maintenance)",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 266,
+        "names": "Lapuz, Elmer L.",
+        "position": "Engineer III (Roads & Maintenance Section Head)",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 267,
+        "names": "Agustin, Andrea Aubrey C.",
+        "position": "Engineer III (Section Head)",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 268,
+        "names": "Valerio, Julianne Anthea R.",
+        "position": "Engineer IV",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 269,
+        "names": "Dela Cruz, Jerry P.",
+        "position": "Foreman I",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 270,
+        "names": "Esteban, Rodolfo L",
+        "position": "Foreman I",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 271,
+        "names": "Manaloto, Roger A.",
+        "position": "Foreman I",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 272,
+        "names": "Manese, Randy C.",
+        "position": "Foreman I",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 273,
+        "names": "Castillo, Ramonito C.",
+        "position": "Foreman II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 274,
+        "names": "Constantino, Gilbert B.",
+        "position": "Foreman II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 275,
+        "names": "Santos, Tito C.",
+        "position": "Foreman II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 276,
+        "names": "Bernardo, Jr., Roberto M.",
+        "position": "Heavy Equipment Operator",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 277,
+        "names": "David, Aldrin M.",
+        "position": "Heavy Equipment Operator",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 278,
+        "names": "Fetalco, Almar A.",
+        "position": "Heavy Equipment Operator",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 279,
+        "names": "Amodo, Jr., Florencio M.",
+        "position": "Labor Foreman",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 280,
+        "names": "Zamora, Arnel D.",
+        "position": "Manager",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 281,
+        "names": "Abalos, Larry J.",
+        "position": "Skilled II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 282,
+        "names": "Baron, Ricky C.",
+        "position": "Skilled II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 283,
+        "names": "De Guzman, Ricardo B.",
+        "position": "Skilled II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 284,
+        "names": "Dimacali, Jr., Jose G.",
+        "position": "Skilled II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 285,
+        "names": "Maniago, Crispin D.",
+        "position": "Skilled II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 286,
+        "names": "Menor, Danilo C.",
+        "position": "Skilled II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 287,
+        "names": "Reyes, Harvey F.",
+        "position": "Skilled II",
+        "division": "BFMD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 288,
+        "names": "Dizon, Floyd S.",
+        "position": "Architect III (Bldg. Permits-Architect)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 289,
+        "names": "Susa, Reynold D.",
+        "position": "Building Regulations Coordinator (Bldg. Permits)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 290,
+        "names": "Victoria, Ronald H.",
+        "position": "Building Regulations Coordinator (Civil-Survey)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 291,
+        "names": "Capulong, Francisca M.",
+        "position": "Building Regulations Coordinator (Survey)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 292,
+        "names": "Perez, Jr., Ponciano S.",
+        "position": "Building Regulations Coordinator (Utilities)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 293,
+        "names": "Gonzales, Sara Jane D.",
+        "position": "Engineer II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 294,
+        "names": "Pangilinan, Carmelo G.",
+        "position": "Engineer III (Bldg. Permits-Civil)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 295,
+        "names": "Panlilio, Henry P.",
+        "position": "Engineer III (Bldg. Permits-Electrical)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 296,
+        "names": "David, Jason B.",
+        "position": "Engineer III (ECE)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 297,
+        "names": "David, Jake C.",
+        "position": "Engineer III (Technical)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 298,
+        "names": "Talo, Ronaldo G.",
+        "position": "Engineer III (Telecom)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 299,
+        "names": "Manalo, Paulo C.",
+        "position": "Engineer III (Utilities-Electrical)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 300,
+        "names": "Tanquilut, Jr., Ricardo C.",
+        "position": "Engineer IV (Construction Permits Section)",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 301,
+        "names": "Tan, Leoncio L.",
+        "position": "Manager",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 302,
+        "names": "Allam, Edralin S.",
+        "position": "Survey Officer II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 303,
+        "names": "Bacani, Arman T.",
+        "position": "Survey Officer II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 304,
+        "names": "Cruz, Precila A.",
+        "position": "Technical Support Assistant",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 305,
+        "names": "Cunanan, Allaizza Marie S.",
+        "position": "Technical Support Assistant",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 306,
+        "names": "Guevarra, Joan G.",
+        "position": "Technical Support Assistant",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 307,
+        "names": "Hipolito, Ferdinand U.",
+        "position": "Technical Support Assistant",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 308,
+        "names": "Cabigting, Ronaldo L.",
+        "position": "Utility Inspector",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 309,
+        "names": "Balderosa, Ramil P.",
+        "position": "Zoning Inspector II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 310,
+        "names": "Manalo, Fernando G.",
+        "position": "Zoning Inspector II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 311,
+        "names": "Patawaran, Mark Anthonie J.",
+        "position": "Zoning Inspector II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 312,
+        "names": "Rivera, Erwin G.",
+        "position": "Zoning Inspector II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 313,
+        "names": "Sorbito, Rommel A.",
+        "position": "Zoning Inspector II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 314,
+        "names": "Sorriano, Rogel T.",
+        "position": "Zoning Inspector II",
+        "division": "BFPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 315,
+        "names": "Gomez, Arvin M.",
+        "position": "Engineer III",
+        "division": "CMD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 316,
+        "names": "Pinlac, Edgardo Gabriel B.",
+        "position": "Engineer III",
+        "division": "CMD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 317,
+        "names": "Cenzon, Renan Joseph A.",
+        "position": "Engineer IV",
+        "division": "CMD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 318,
+        "names": "Magat, Rogelio M.",
+        "position": "Manager",
+        "division": "CMD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 319,
+        "names": "Rodriguez, Jade P.",
+        "position": "Administrative Officer II",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 320,
+        "names": "Arroyo, Rowena T.",
+        "position": "Environmental Analyst",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 321,
+        "names": "Arce, Jr., Robert Jessie M.",
+        "position": "Environmental Management Specialist II",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 322,
+        "names": "Cabreros, Michael James C.",
+        "position": "Environmental Management Specialist II",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 323,
+        "names": "Cacap, Anthony F.",
+        "position": "Light Equipment Operator",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 324,
+        "names": "Camaya, Ian Kevin N.",
+        "position": "Light Equipment Operator",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 325,
+        "names": "Catacutan, Allan A.",
+        "position": "Light Equipment Operator",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 326,
+        "names": "Musngi, Diosdado C.",
+        "position": "Light Equipment Operator",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 327,
+        "names": "Pagcu, Elmer M.",
+        "position": "Light Equipment Operator",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 328,
+        "names": "Patio, Jr., Eduardo L.",
+        "position": "Light Equipment Operator",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 329,
+        "names": "Sanchez, Eric A.",
+        "position": "Light Equipment Operator",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 330,
+        "names": "Sangab, Edwin B.",
+        "position": "Light Equipment Operator",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 331,
+        "names": "Bognot, Erwin C.",
+        "position": "Manager",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 332,
+        "names": "Herrera, Philip M.",
+        "position": "Park Attendant",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 333,
+        "names": "Miguel, Jr., Conrado N.",
+        "position": "Park Attendant",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 334,
+        "names": "Nabong, Melvin Flor P.",
+        "position": "Park Maintenance Officer",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 335,
+        "names": "Tiotuico, Angelo N.",
+        "position": "Park Maintenance Supervisor",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 336,
+        "names": "Moreno, Daniel V.",
+        "position": "Project Development Assistant",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 337,
+        "names": "Canlas, Jose Jasper V.",
+        "position": "Project Development Officer II",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 338,
+        "names": "Miclat, Nelson C.",
+        "position": "Project Development Officer III",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 339,
+        "names": "Galang, Romeo C.",
+        "position": "Sr. Environmental Management Specialist",
+        "division": "EPD",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 340,
+        "names": "Pamintuan, Paula Llana S.",
+        "position": "Architect II",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 341,
+        "names": "Tan, Daniel Joseph M.",
+        "position": "Architect II",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 342,
+        "names": "Dayrit, Russell C.",
+        "position": "Architect III",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 343,
+        "names": "Moreno, Hector M.",
+        "position": "Engineer II",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 344,
+        "names": "Manalac, Jonell B.",
+        "position": "Engineer III",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 345,
+        "names": "Soliman, Clarisa Bianca M.",
+        "position": "Engineer III",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 346,
+        "names": "Liwanag, Jr., Alexander P.",
+        "position": "Engineer III - SR. ELECTRICAL ENGINEER",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 347,
+        "names": "Mendoza, Nicko Angelo T.",
+        "position": "Engineer III (Structural)",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 348,
+        "names": "Soriano, Ronald G.",
+        "position": "Engineer IV",
+        "division": "IPS",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 349,
+        "names": "Aragon, Faridha M.",
+        "position": "Executive Assistant II",
+        "division": "OVP",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 350,
+        "names": "Mangio, Bernadette D.",
+        "position": "Sr. Safety Specialist",
+        "division": "OVP",
+        "group": "ESG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 351,
+        "names": "Corachea, Alexander J.",
+        "position": "Attorney IV",
+        "division": "CSD",
+        "group": "LAG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 352,
+        "names": "Valerio, Neo Y.",
+        "position": "Attorney IV",
+        "division": "CSD",
+        "group": "LAG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 353,
+        "names": "Goingco, Jeric B.",
+        "position": "Legal Officer II",
+        "division": "CSD",
+        "group": "LAG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 354,
+        "names": "Quitalig, Leila P.",
+        "position": "Legal Officer III",
+        "division": "CSD",
+        "group": "LAG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 355,
+        "names": "Barin, Anna Gayle T.",
+        "position": "Manager",
+        "division": "CSD",
+        "group": "LAG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 356,
+        "names": "Estioko, Mary Therese Gabrielle B.",
+        "position": "Attorney IV",
+        "division": "LD",
+        "group": "LAG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 357,
+        "names": "Masarate, Jose Fernando B.",
+        "position": "Attorney IV",
+        "division": "LD",
+        "group": "LAG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 358,
+        "names": "Panlilio, Adriel Elisha P.",
+        "position": "Legal Assistant",
+        "division": "LD",
+        "group": "LAG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 359,
+        "names": "Carreon, Jr., Rolando S.",
+        "position": "Legal Officer II",
+        "division": "LD",
+        "group": "LAG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 360,
+        "names": "Cosme, Wyda M.",
+        "position": "Legal Officer III",
+        "division": "LD",
+        "group": "LAG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 361,
+        "names": "Arcilla, Azee T.",
+        "position": "Manager",
+        "division": "LD",
+        "group": "LAG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 362,
+        "names": "Paraguas, Lea T.",
+        "position": "Executive Assistant II",
+        "division": "OVP",
+        "group": "LAG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 363,
+        "names": "Baluyut, Kizzel Joi A.",
+        "position": "Agenda/Minutes Officer II",
+        "division": "BS",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 364,
+        "names": "Gozun, Heidi P.",
+        "position": "Agenda/Minutes Officer II",
+        "division": "BS",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 365,
+        "names": "Datu, Ethel T.",
+        "position": "Board Secretary II",
+        "division": "BS",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 366,
+        "names": "San Diego, Maria Cecilia B.",
+        "position": "Board Secretary II",
+        "division": "BS",
+        "group": "OP",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 367,
+        "names": "Garcia, Cecile G.",
+        "position": "Board Secretary IV",
+        "division": "BS",
+        "group": "OP",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 368,
+        "names": "Dulawan, Raoul Andrew J.",
+        "position": "Communications Assistant",
+        "division": "CD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 369,
+        "names": "Sta. Maria, Dennis R.",
+        "position": "Communications Assistant",
+        "division": "CD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 370,
+        "names": "Cunanan, Gina P.",
+        "position": "Communications Officer I",
+        "division": "CD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 371,
+        "names": "Habana, Thea Eunice Paz P.",
+        "position": "Communications Officer I",
+        "division": "CD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 372,
+        "names": "Adona, Krissumpta Maree M.",
+        "position": "Communications Officer II",
+        "division": "CD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 373,
+        "names": "Palo, William Crawford D.",
+        "position": "Communications Officer II",
+        "division": "CD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 374,
+        "names": "Cunanan, Julia I.",
+        "position": "Communications Officer III",
+        "division": "CD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 375,
+        "names": "Meneses, Dennis B.",
+        "position": "Communications Officer III",
+        "division": "CD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 376,
+        "names": "Aguinaldo, Astrud Q.",
+        "position": "Manager",
+        "division": "CD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 377,
+        "names": "Castro, Mary Janet M.",
+        "position": "Planning Officer II",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 378,
+        "names": "Nunag, Jose Angelo M.",
+        "position": "Planning Officer II",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 379,
+        "names": "Paraan, Mylene S.",
+        "position": "Planning Officer II",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 380,
+        "names": "Reyes, Mark Laurence M.",
+        "position": "Planning Officer II",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 381,
+        "names": "Bucad, Ma. Bernadette P.",
+        "position": "Planning Officer III",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 382,
+        "names": "Quitalig, Reinnier M.",
+        "position": "Planning Officer III",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 383,
+        "names": "San Diego, Walter A.",
+        "position": "Planning Officer III",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 384,
+        "names": "Tayag, Maria Jennifer S.",
+        "position": "Planning Officer III",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 385,
+        "names": "Magat, Mary Elizabeth J.",
+        "position": "Planning Officer IV",
+        "division": "CPD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 386,
+        "names": "Bacuno, Layola M.",
+        "position": "Internal Auditor II",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 387,
+        "names": "Banal, Allan C.",
+        "position": "Internal Auditor II",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 388,
+        "names": "Gimeno, Blesilda R.",
+        "position": "Internal Auditor II",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 389,
+        "names": "Manaloto, Arnold D.",
+        "position": "Internal Auditor II",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 390,
+        "names": "Mandap, Joel T.",
+        "position": "Internal Auditor II",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 391,
+        "names": "Mangio, Cecilia M.",
+        "position": "Internal Auditor II",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 392,
+        "names": "Palo, Ronald N.",
+        "position": "Internal Auditor II",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 393,
+        "names": "Umali, Maria Samantha P.",
+        "position": "Internal Auditor II",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 394,
+        "names": "Penuliar, Diana M.",
+        "position": "Internal Auditor III",
+        "division": "IAD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 395,
+        "names": "Bingcang, Jonathan M.",
+        "position": "Computer Operator II",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 396,
+        "names": "Ocampo, June E.",
+        "position": "Computer Programmer II",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 397,
+        "names": "Agustin, Elmer P.",
+        "position": "GIS Assistant",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 398,
+        "names": "Torres, Perlito P.",
+        "position": "GIS Officer II",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 399,
+        "names": "Nozawa, Brando Marcel C.",
+        "position": "GIS Officer III",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 400,
+        "names": "Baraquiel, Bryan Kier P.",
+        "position": "Information Systems Analyst I",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 401,
+        "names": "Manalili, Edsel L.",
+        "position": "Information Systems Analyst I",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 402,
+        "names": "Bacani, Paul Dexter C.",
+        "position": "Information Technology Officer III",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 403,
+        "names": "Guina, Wendell D.",
+        "position": "Information Technology Officer III",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 404,
+        "names": "Pattaui, Kristine Lauren S.",
+        "position": "Information Technology Officer IV",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 405,
+        "names": "Jimenez, Mark Aldrin G.",
+        "position": "Technical Services Officer I",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 406,
+        "names": "Ramos, Michael John",
+        "position": "Technical Services Officer III",
+        "division": "ITD",
+        "group": "OP",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 407,
+        "names": "Dacer, Francis Louie D.",
+        "position": "Executive Assistant II",
+        "division": "OP",
+        "group": "OP",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 408,
+        "names": "Morada, Sheraline F.",
+        "position": "Project Development Officer IV",
+        "division": "OP",
+        "group": "OP",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 409,
+        "names": "Ancajas, Jr., Lito D.",
+        "position": "Land Management Assistant",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 410,
+        "names": "Cayanan, Anthony D.",
+        "position": "Land Management Assistant",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 411,
+        "names": "Hooker, Junaly M.",
+        "position": "Land Management Assistant",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 412,
+        "names": "Lintag, Bryan B.",
+        "position": "Land Management Assistant",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 413,
+        "names": "Panlilio, Natalie Sue L.",
+        "position": "Land Management Assistant",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 414,
+        "names": "Baluyut, Abner D.",
+        "position": "Land Management Officer II",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 415,
+        "names": "Pascual, Benjamin Bryan L.",
+        "position": "Land Management Officer II",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 416,
+        "names": "Calma, Anthony C.",
+        "position": "Land Management Officer III",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 417,
+        "names": "Caniones, Marcial T.",
+        "position": "Land Management Officer IV",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "dq"
+    },
+    {
+        "key": 418,
+        "names": "Jimenez, Eric V.",
+        "position": "Manager",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 419,
+        "names": "Dizon, Arnaldo Efren D.",
+        "position": "Sr. Transportation Regulation Officer",
+        "division": "EPRD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 420,
+        "names": "Enriquez, Jeniviv T.",
+        "position": "Action Agent",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 421,
+        "names": "Marucut, Sherlyn Joy M.",
+        "position": "Administrative Assistant IV",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 422,
+        "names": "Villapana, Jessica M.",
+        "position": "Administrative Assistant IV",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 423,
+        "names": "Diaz, Magda G.",
+        "position": "Administrative Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 424,
+        "names": "Lugtu, Sussette S.",
+        "position": "Administrative Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 425,
+        "names": "Valencia, Belinda G.",
+        "position": "Administrative Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 426,
+        "names": "Tiria, Elizabeth M.",
+        "position": "Administrative Officer III",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 427,
+        "names": "Ancheta, Noel D.",
+        "position": "Assistant Traffic Operations Officer",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 428,
+        "names": "Conag, Edmund G.",
+        "position": "Assistant Traffic Operations Officer",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 429,
+        "names": "Frasco, Michael B.",
+        "position": "Assistant Traffic Operations Officer",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 430,
+        "names": "Guevarra, Rose Ann S.",
+        "position": "Assistant Traffic Operations Officer",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 431,
+        "names": "Lagman, Jr., Roberto I.",
+        "position": "Assistant Traffic Operations Officer",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 432,
+        "names": "Ynigo, Anlord Z.",
+        "position": "Assistant Traffic Operations Officer",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 433,
+        "names": "Pamintuan, Jun Y.",
+        "position": "Fire Officer A",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 434,
+        "names": "Coronel, Lhervin L.",
+        "position": "Fire Officer B",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 435,
+        "names": "Bala, Joel G.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 436,
+        "names": "Bucad, Omar G.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 437,
+        "names": "Calma, Marlon L.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 438,
+        "names": "Carbungco, Roy N.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 439,
+        "names": "Datu, Darwin Z.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 440,
+        "names": "David, Allan V.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 441,
+        "names": "Delaserna, Reynaldo M.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 442,
+        "names": "Galang, Archie P.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 443,
+        "names": "Henson, Onid L.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 444,
+        "names": "Juco, Renz Gio G.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 445,
+        "names": "Lansangan, Walter E.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 446,
+        "names": "Lugtu, Noel J.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 447,
+        "names": "Mejia, Miguelito P.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 448,
+        "names": "Mercado, Geryme J.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 449,
+        "names": "Orantes, Joel U.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 450,
+        "names": "Pare, Almie B.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 451,
+        "names": "Tubil, Greg A.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 452,
+        "names": "Yumul, Ariel C.",
+        "position": "Firefighter",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 453,
+        "names": "Angeles, Herbert S.",
+        "position": "Manager",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 454,
+        "names": "Domagas, Rosano Noel",
+        "position": "Security Agent I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 455,
+        "names": "Acompanado, Jr., Alfredo A.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 456,
+        "names": "Concepcion, Luis S.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 457,
+        "names": "De Guzman, Edcel John B.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 458,
+        "names": "De Leon, Ryan C.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 459,
+        "names": "Dizon, Ritzi R.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 460,
+        "names": "Enriquez, JV V.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 461,
+        "names": "Guilas, Shairon Jeff S.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 462,
+        "names": "Manaloto, Almabeth L.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 463,
+        "names": "Manarang, Aris G.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 464,
+        "names": "Pasco, Jonel M.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 465,
+        "names": "Sarmiento, Michael F.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 466,
+        "names": "Simbol, Marlo D.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 467,
+        "names": "Turla, Jarold T.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 468,
+        "names": "Villanueva, Francis Arnold G.",
+        "position": "Security Agent I (Enforcer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 469,
+        "names": "Aban, Jr., Fernando P.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 470,
+        "names": "Agbilay, Lorraine J.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 471,
+        "names": "Alamares, Erwin S.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 472,
+        "names": "Alvaro, Alvin S.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 473,
+        "names": "Arbitrario, Jan Aldwin B.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 474,
+        "names": "Balatbat, Danilo T.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 475,
+        "names": "Brita, Roberto R.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 476,
+        "names": "Calimutan, Pepito P.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 477,
+        "names": "Cardinoza, Ronald D.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 478,
+        "names": "Cayme, Alger C.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 479,
+        "names": "Cortez, Jessy D.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 480,
+        "names": "David, Mario Q.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 481,
+        "names": "David, Roselyn T.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 482,
+        "names": "Dioquino, Damanique C.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 483,
+        "names": "Domingo, Adrian V.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 484,
+        "names": "Edralin, Alexander D.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 485,
+        "names": "Ellema, Teddy D.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 486,
+        "names": "Frasco, Conrado B.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 487,
+        "names": "Gabales, Darwin E.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 488,
+        "names": "Gabriel, Randy Paul R.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 489,
+        "names": "Gacutan, Jonathan P.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 490,
+        "names": "Galicia, Julius E.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 491,
+        "names": "Gamboa, Jason R.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 492,
+        "names": "Garcia, Angelito A.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 493,
+        "names": "Garpo, Jeffrey D.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 494,
+        "names": "Guiao, Marylou A.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 495,
+        "names": "Jenkins, Jason Paul C.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 496,
+        "names": "Lacsina, Billy L.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 497,
+        "names": "Lungos, Jessie A.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 498,
+        "names": "Mallari, Marlon G.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 499,
+        "names": "Marana, Michael O.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 500,
+        "names": "Matias, Jr., Emilio F.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 501,
+        "names": "Miller, Paula Marie",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 502,
+        "names": "Nogoy, Rommel C.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 503,
+        "names": "Otero, Michael P.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 504,
+        "names": "Palo, Miguel Luis R.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 505,
+        "names": "Pasion, Raymart",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 506,
+        "names": "Pelayo, Arold Y.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 507,
+        "names": "Periamesa, Dante C.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 508,
+        "names": "Pineda, Aira Ann May V.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 509,
+        "names": "Reambillo, Jardy D.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 510,
+        "names": "Rivera, Jr., Victor M.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 511,
+        "names": "Rodriguez, Rasheed R.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 512,
+        "names": "Roque, Jeffrey C.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 513,
+        "names": "Salazar, Manolito G.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 514,
+        "names": "Taguinod, Jeffrey P.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 515,
+        "names": "Tayag, Bernard D.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 516,
+        "names": "Tiamzon, Jr. , Marcelino R.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 517,
+        "names": "Ubas, Rainhel B.",
+        "position": "Security Agent I (Patrolman)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 518,
+        "names": "Anicete, II Jacob Ceazar P.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 519,
+        "names": "Arceo, Allan P.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 520,
+        "names": "Balino, Dennis C.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 521,
+        "names": "Bangalan, Samuel G.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 522,
+        "names": "Cordova, Ryan James C.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 523,
+        "names": "De Leon, Arvin M.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 524,
+        "names": "Deza, Kemzy C.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 525,
+        "names": "Dizon, Mark Anthony A.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 526,
+        "names": "Duenas, Jr., Nelson John D.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 527,
+        "names": "Dungca, Noel T.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 528,
+        "names": "Emperador, Alvin S.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 529,
+        "names": "Evedes, Renante M.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "nq"
+    },
+    {
+        "key": 530,
+        "names": "Guilas, Ryan V.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 531,
+        "names": "Guiwan, Jeffrey L.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 532,
+        "names": "Hipolito, Jr., Rustico C.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 533,
+        "names": "Lacbayo, Ronnie G.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 534,
+        "names": "Lacsa, Jason R.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 535,
+        "names": "Manarang, Eric Dexter D.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 536,
+        "names": "Pojas, Mark Lou S.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 537,
+        "names": "Quiambao, Romar G.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "nq"
+    },
+    {
+        "key": 538,
+        "names": "Torio, Ansly T.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 539,
+        "names": "Vargas, Roel M.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 540,
+        "names": "Venzon, Kris Camille S.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 541,
+        "names": "Zulueta, Michael E.",
+        "position": "Security Agent I (Special Reaction Unit)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 542,
+        "names": "Bagguatan, Manuellito M.",
+        "position": "Security Agent II (Detachment Commander)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 543,
+        "names": "Martinez-Ponio, Vanessa M.",
+        "position": "Security Agent II (Detachment Commander)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 544,
+        "names": "Barrera, Mando B.",
+        "position": "Security Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 545,
+        "names": "Estrada, Ely S.",
+        "position": "Security Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 546,
+        "names": "Nucum, Wilson M.",
+        "position": "Security Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 547,
+        "names": "Quiambao, Albert S.",
+        "position": "Security Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 548,
+        "names": "Sendin, Louie H.",
+        "position": "Security Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 549,
+        "names": "Bernardo, Arvin M.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 550,
+        "names": "Dantes, Rommel G.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 551,
+        "names": "Faustorilla, Jubie T.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 552,
+        "names": "Fernandez, Romelito M.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 553,
+        "names": "Luzong, Emanuelle A.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 554,
+        "names": "Mamaril, Elvira H.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 555,
+        "names": "Nabong, Joel P.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 556,
+        "names": "Pare, Alan B.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 557,
+        "names": "Plant, Jr., Patrick",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 558,
+        "names": "Robles, Hazel C.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 559,
+        "names": "Sanchez, Gerson D.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 560,
+        "names": "Sebastian, Edgar P.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 561,
+        "names": "Senapilo, Ariel E.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 562,
+        "names": "Tom, Ronino R.",
+        "position": "Security Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 563,
+        "names": "Palma, Christopher Nino R.",
+        "position": "Security Officer II (Field Commander)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 564,
+        "names": "Espinosa, Arnold S.",
+        "position": "Security Officer III",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 565,
+        "names": "Sapnu, Rodelio A.",
+        "position": "Security Officer III",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 566,
+        "names": "Bancolo, Jere May B.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 567,
+        "names": "Garcia, Donald P.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 568,
+        "names": "Garung, Nelson J.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 569,
+        "names": "Laquian, Miracle Faith N.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 570,
+        "names": "Maniago, Jonathan S.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 571,
+        "names": "Miranda, Jaydee B.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 572,
+        "names": "Nacpil, Renon G.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 573,
+        "names": "Pablo, Ronald Allan M.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 574,
+        "names": "Salunga, Carlo R.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 575,
+        "names": "Serrano, June G.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 576,
+        "names": "Sunga, Mylyn",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 577,
+        "names": "Yanga, Danica C.",
+        "position": "Special Agent II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 578,
+        "names": "Guinto, Raffy G.",
+        "position": "Special Agent II (Sector Supervisor)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 579,
+        "names": "Lee, Jose Evan L.",
+        "position": "Special Agent II (Sector Supervisor)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 580,
+        "names": "Mercado, Nelson C.",
+        "position": "Special Agent II (Sector Supervisor)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 581,
+        "names": "Rogales, Jr., Noel M.",
+        "position": "Special Agent II (Sector Supervisor)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 582,
+        "names": "Somera, Neil R.",
+        "position": "Special Agent II (Sector Supervisor)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 583,
+        "names": "Bolaton, Chanda B.",
+        "position": "Special Agent II (TOC/Desk Officer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 584,
+        "names": "Cortez, Elginne C.",
+        "position": "Special Agent II (TOC/Desk Officer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 585,
+        "names": "David, Cyryll B.",
+        "position": "Special Agent II (TOC/Desk Officer)",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 586,
+        "names": "Laus, Michael C.",
+        "position": "Sr. Operations Officer",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 587,
+        "names": "Salvador, Joyme M.",
+        "position": "Tow Truck Driver",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 588,
+        "names": "Gulatera, Ramelo M.",
+        "position": "Traffic Management Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 589,
+        "names": "Pascual, Ysmael C.",
+        "position": "Traffic Management Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 1,
+        "2025": 1,
+        "movement": "na"
+    },
+    {
+        "key": 590,
+        "names": "David, Jr., Paulino M.",
+        "position": "Traffic Management Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 591,
+        "names": "Miclat, Angelo M.",
+        "position": "Traffic Operation Officer III",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 592,
+        "names": "Guiao, Ricardo C.",
+        "position": "Transport Regulation Officer II",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 0,
+        "movement": "na"
+    },
+    {
+        "key": 593,
+        "names": "Bingcang, Rodolfo S.",
+        "position": "Transportation Regulation Officer I",
+        "division": "PSD",
+        "group": "SSG",
+        "2024": 0,
+        "2025": 1,
+        "movement": "na"
+    }
+];
+
+    const tableBody = document.getElementById('tableBody');
+    const sidebar = document.getElementById('sidebar');
+    const modalOverlay = document.getElementById('modalOverlay');
+    let currentSort = { key: '', asc: true };
+
+    function init() {
+        renderSidebar();
+        renderTable(PERSONNEL_DATA);
+        document.getElementById('totalCountBadge').innerText = `Total Records: ${PERSONNEL_DATA.length}`;
+    }
+
+    function getIcons(row) {
+        const c24 = row['2024'] == 1 ? '<div class="circle bg-competent">C</div>' : '<div class="circle bg-not">N</div>';
+        const c25 = row['2025'] == 1 ? '<div class="circle bg-competent">C</div>' : '<div class="circle bg-not">N</div>';
+        let mov = '';
+        if(row.movement === 'dq') mov = '<div class="circle bg-dq">-</div>';
+        else if(row.movement === 'nq') mov = '<div class="circle bg-nq">+</div>';
+        else mov = '<div class="circle bg-na">=</div>';
+        return { c24, c25, mov };
+    }
+
+    function renderSidebar() {
+        const categories = [
+            { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not in 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
+            { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not in 2025', filter: r => r['2024'] == 1 && r['2025'] == 0 },
+            { label: 'New Qualified', border: 'border-blue', desc: 'Qualified in 2025 but not in 2024', filter: r => r.movement === 'nq' },
+            { label: 'Disqualified', border: 'border-yellow', desc: 'Qualified in 2024 but not in 2025', filter: r => r.movement === 'dq' },
+            { label: '2024 Total', border: 'border-purple', desc: 'Total Qualified Competent 2024', filter: r => r['2024'] == 1 },
+            { label: '2025 Total', border: 'border-orange', desc: 'Total Qualified Competent 2025', filter: r => r['2025'] == 1 },
+        ];
+        sidebar.innerHTML = '';
+        categories.forEach(cat => {
+            const data = PERSONNEL_DATA.filter(cat.filter);
+            const div = document.createElement('div');
+            div.className = `tile ${cat.border}`;
+            div.innerHTML = `<h3>${cat.label}</h3><div class="count">${data.length}</div><div class="desc">${cat.desc}</div>`;
+            div.onclick = () => openModal(cat.label, data);
+            sidebar.appendChild(div);
+        });
+    }
+
+    function renderTable(data) {
+        tableBody.innerHTML = '';
+        data.forEach(r => {
+            const icons = getIcons(r);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${r.names}</strong></td>
+                <td>${r.position}</td>
+                <td>${r.division}</td>
+                <td>${r.group}</td>
+                <td style="text-align:center">${icons.mov}</td>
+                <td style="text-align:center">${icons.c24}</td>
+                <td style="text-align:center">${icons.c25}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function openModal(title, data) {
+        const modalTableBody = document.getElementById('modalTableBody');
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalSubtitle').innerText = `Count: ${data.length}`;
+        modalOverlay.style.display = 'flex';
+        const renderM = (l) => {
+            modalTableBody.innerHTML = l.map(r => `<tr><td><strong>${r.names}</strong></td><td>${r.position}</td><td>${r.division}</td><td>${r.group}</td></tr>`).join('');
+        };
+        renderM(data);
+        document.getElementById('modalSearch').oninput = (e) => {
+            const v = e.target.value.toLowerCase();
+            renderM(data.filter(r => r.names.toLowerCase().includes(v) || r.position.toLowerCase().includes(v)));
+        };
+    }
+
+    function closeModal() { modalOverlay.style.display = 'none'; }
+    
+    function sortTable(key) {
+        if (currentSort.key === key) currentSort.asc = !currentSort.asc;
+        else { currentSort.key = key; currentSort.asc = true; }
+        const sorted = [...PERSONNEL_DATA].sort((a, b) => {
+            let vA = a[key], vB = b[key];
+            if (vA < vB) return currentSort.asc ? -1 : 1;
+            if (vA > vB) return currentSort.asc ? 1 : -1;
+            return 0;
+        });
+        renderTable(sorted);
+    }
+
+    document.getElementById('globalSearch').addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase();
+        const filtered = PERSONNEL_DATA.filter(r => 
+            r.names.toLowerCase().includes(val) || r.position.toLowerCase().includes(val) ||
+            r.division.toLowerCase().includes(val) || r.group.toLowerCase().includes(val)
+        );
+        renderTable(filtered);
+    });
+
+    init();
+</script>
+</body>
+</html>
