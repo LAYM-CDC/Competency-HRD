@@ -17,11 +17,10 @@
             --text-dark: #333;
         }
 
-        /* Essential for "No Global Scroll" */
         html, body {
             height: 100%;
             margin: 0;
-            overflow: hidden; /* Prevents the whole site from scrolling */
+            overflow: hidden;
         }
 
         body {
@@ -32,7 +31,7 @@
             color: var(--text-dark);
         }
 
-        /* Fixed Header */
+        /* Header with Home Button */
         header {
             background-color: var(--header-bg);
             color: white;
@@ -47,14 +46,30 @@
         .logo { height: 45px; }
         header h1 { margin: 0; font-size: 1.4rem; flex-grow: 1; text-align: center; }
 
-        /* Main Layout Container */
+        /* Requested Home Button Style */
+        .btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.3s;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #219150;
+        }
+
+        /* Main Layout */
         .container {
             display: flex;
             flex: 1;
-            overflow: hidden; /* Contains the sidebar and main section */
+            overflow: hidden;
         }
 
-        /* Sidebar - Scrollable independently if tiles exceed height */
         aside {
             width: 320px;
             background: #fff;
@@ -67,13 +82,12 @@
             flex-shrink: 0;
         }
 
-        /* Main Section */
         main {
             flex: 1;
             padding: 20px;
             display: flex;
             flex-direction: column;
-            min-width: 0; /* Prevents flex items from breaking layout */
+            min-width: 0;
         }
 
         .top-bar {
@@ -85,13 +99,13 @@
             flex-shrink: 0;
         }
 
-        /* The Scrollable Table Container */
+        /* Scrollable Table Area */
         .table-container {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            flex: 1; /* Takes up remaining vertical space */
-            overflow-y: auto; /* Enables vertical scrolling inside the container */
+            flex: 1;
+            overflow-y: auto;
             border: 1px solid #eee;
         }
 
@@ -101,7 +115,6 @@
             text-align: left;
         }
 
-        /* Sticky Table Headers */
         thead th {
             background: #f8f9fa;
             padding: 15px;
@@ -110,24 +123,22 @@
             cursor: pointer;
             border-bottom: 2px solid #eee;
             position: sticky;
-            top: 0; /* Keeps headers visible while scrolling the container */
+            top: 0;
             z-index: 10;
         }
 
         td { padding: 10px 15px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
         tr:hover { background-color: #f9f9f9; }
 
-        /* Visual Elements */
+        /* Tiles & Status Indicators */
         .tile {
             background: #fff;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             cursor: pointer;
-            transition: transform 0.2s;
             border: 1px solid #eee;
         }
-        .tile:hover { transform: translateX(5px); }
         .tile h3 { margin: 0 0 5px 0; font-size: 1rem; color: #555; }
         .tile .count { font-size: 1.8rem; font-weight: bold; color: var(--header-bg); }
         
@@ -154,9 +165,16 @@
         .search-box {
             flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid #ddd; outline: none;
         }
-        .stats-badge {color: #2c3e50; border-radius: 5px; font-weight: bold; }
+        .stats-badge { background: var(--header-bg); color: white; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
 
-        /* Modal Styles */
+        .border-green { border-left: 6px solid var(--success); }
+        .border-red { border-left: 6px solid var(--danger); }
+        .border-blue { border-left: 6px solid var(--info); }
+        .border-yellow { border-left: 6px solid var(--warning); }
+        .border-purple { border-left: 6px solid var(--purple); }
+        .border-orange { border-left: 6px solid var(--orange); }
+
+        /* Modal */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000;
@@ -167,21 +185,14 @@
         }
         .modal-header { padding: 20px; background: var(--header-bg); color: white; display: flex; justify-content: space-between; align-items: center; }
         .modal-body { padding: 0; overflow-y: auto; flex: 1; }
-
-        .border-green { border-left: 6px solid var(--success); }
-        .border-red { border-left: 6px solid var(--danger); }
-        .border-blue { border-left: 6px solid var(--info); }
-        .border-yellow { border-left: 6px solid var(--warning); }
-        .border-purple { border-left: 6px solid var(--purple); }
-        .border-orange { border-left: 6px solid var(--orange); }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://www.clark.com.ph/images/2024/ClarkLogoPNGhires_White.png" alt="Logo" class="logo">
-    <h1>Competency Monitoring Dashboard</h1>
-    <div style="width: 150px;"></div>
+    <img src="https://www.clark.com.ph/images/cdc-logo-main.png" alt="Logo" class="logo">
+    <h1>2025 Personnel Competency Dashboard</h1>
+    <a href="index.html" class="btn">HOME</a>
 </header>
 
 <div class="container">
@@ -189,7 +200,7 @@
 
     <main>
         <div class="top-bar">
-            <input type="text" id="globalSearch" class="search-box" placeholder="Search Master List...">
+            <input type="text" id="globalSearch" class="search-box" placeholder="Search Master List by Name, Position, or Division...">
             <div class="stats-badge" id="totalCountBadge">Total Records: 0</div>
         </div>
 
@@ -201,7 +212,7 @@
                         <th onclick="sortTable('position')">Position</th>
                         <th onclick="sortTable('division')">Div</th>
                         <th onclick="sortTable('group')">Group</th>
-                        <th style="text-align:center" onclick="sortTable('movement')">Movement</th>
+                        <th style="text-align:center" onclick="sortTable('movement')">Mov</th>
                         <th style="text-align:center" onclick="sortTable('2024')">2024</th>
                         <th style="text-align:center" onclick="sortTable('2025')">2025</th>
                     </tr>
@@ -222,7 +233,7 @@
             <span style="cursor:pointer; font-size:2rem" onclick="closeModal()">&times;</span>
         </div>
         <div style="padding: 15px 20px; border-bottom: 1px solid #eee; background: #fdfdfd;">
-            <input type="text" id="modalSearch" class="search-box" placeholder="Filter category..." style="width: 100%; box-sizing: border-box;">
+            <input type="text" id="modalSearch" class="search-box" placeholder="Filter this list..." style="width: 100%; box-sizing: border-box;">
         </div>
         <div class="modal-body">
             <table style="width:100%">
@@ -235,10 +246,10 @@
     </div>
 </div>
 
-<footer>Developed by LAYM HRD Solutions</footer>
+<footer>Powered by LAYM HRD Solutions</footer>
 
 <script>
-    // PERSONNEL_DATA JSON (Replace with full data)
+    // FULL 593 RECORDS DATASET
     const PERSONNEL_DATA = [
 
     {
@@ -6171,7 +6182,7 @@
         "2025": 1,
         "movement": "na"
     }
-];
+    ];
 
     const tableBody = document.getElementById('tableBody');
     const sidebar = document.getElementById('sidebar');
@@ -6185,23 +6196,23 @@
     }
 
     function getIcons(row) {
-        const c24 = row['2024'] == 1 ? '<div class="circle bg-competent">C</div>' : '<div class="circle bg-not">N</div>';
-        const c25 = row['2025'] == 1 ? '<div class="circle bg-competent">C</div>' : '<div class="circle bg-not">N</div>';
+        const c24 = row['2024'] == 1 ? '<div class="circle bg-competent" title="Competent">C</div>' : '<div class="circle bg-not" title="Not Competent">N</div>';
+        const c25 = row['2025'] == 1 ? '<div class="circle bg-competent" title="Competent">C</div>' : '<div class="circle bg-not" title="Not Competent">N</div>';
         let mov = '';
-        if(row.movement === 'dq') mov = '<div class="circle bg-dq">-</div>';
-        else if(row.movement === 'nq') mov = '<div class="circle bg-nq">+</div>';
-        else mov = '<div class="circle bg-na">=</div>';
+        if(row.movement === 'dq') mov = '<div class="circle bg-dq" title="Disqualified">-</div>';
+        else if(row.movement === 'nq') mov = '<div class="circle bg-nq" title="Newly Qualified">+</div>';
+        else mov = '<div class="circle bg-na" title="No Change">=</div>';
         return { c24, c25, mov };
     }
 
     function renderSidebar() {
         const categories = [
-            { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not in 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
-            { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not in 2025', filter: r => r['2024'] == 1 && r['2025'] == 0 },
-            { label: 'New Qualified', border: 'border-blue', desc: 'Qualified in 2025 but not in 2024', filter: r => r.movement === 'nq' },
-            { label: 'Disqualified', border: 'border-yellow', desc: 'Qualified in 2024 but not in 2025', filter: r => r.movement === 'dq' },
-            { label: '2024 Total', border: 'border-purple', desc: 'Total Qualified Competent 2024', filter: r => r['2024'] == 1 },
-            { label: '2025 Total', border: 'border-orange', desc: 'Total Qualified Competent 2025', filter: r => r['2025'] == 1 },
+            { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
+            { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not 2025', filter: r => r['2024'] == 1 && r['2025'] == 0 },
+            { label: 'New Qualified', border: 'border-blue', desc: 'Newly qualified (nq)', filter: r => r.movement === 'nq' },
+            { label: 'Disqualified', border: 'border-yellow', desc: 'Disqualified (dq)', filter: r => r.movement === 'dq' },
+            { label: '2024 Total', border: 'border-purple', desc: 'Total competent 2024', filter: r => r['2024'] == 1 },
+            { label: '2025 Total', border: 'border-orange', desc: 'Total competent 2025', filter: r => r['2025'] == 1 },
         ];
         sidebar.innerHTML = '';
         categories.forEach(cat => {
@@ -6235,7 +6246,7 @@
     function openModal(title, data) {
         const modalTableBody = document.getElementById('modalTableBody');
         document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalSubtitle').innerText = `Count: ${data.length}`;
+        document.getElementById('modalSubtitle').innerText = `Total Count: ${data.length}`;
         modalOverlay.style.display = 'flex';
         const renderM = (l) => {
             modalTableBody.innerHTML = l.map(r => `<tr><td><strong>${r.names}</strong></td><td>${r.position}</td><td>${r.division}</td><td>${r.group}</td></tr>`).join('');
