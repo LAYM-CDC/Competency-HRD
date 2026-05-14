@@ -130,6 +130,16 @@
         td { padding: 10px 15px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
         tr:hover { background-color: #f9f9f9; }
 
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.count {
+    display: inline-block;
+    animation: countUp 0.5s ease-out forwards;
+}
+
         /* Tiles & Status Indicators */
         .tile {
             background: #fff;
@@ -6213,6 +6223,19 @@
     }
     ];
 
+function animateValue(obj, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
     const tableBody = document.getElementById('tableBody');
     const sidebar = document.getElementById('sidebar');
     const modalOverlay = document.getElementById('modalOverlay');
@@ -6240,25 +6263,37 @@
     }
 
     // 3. MAIN UI RENDERING
-    function renderSidebar() {
-        const categories = [
-            { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not in 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
-            { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not in 2025', filter: r => r['2024'] == 1 && r['2025'] == 0 },
-            { label: 'New Qualified', border: 'border-blue', desc: 'Qualified in 2025 but not in 2024', filter: r => r.movement === 'nq' },
-            { label: 'Disqualified', border: 'border-yellow', desc: 'Qualified in 2024 but not in 2025', filter: r => r.movement === 'dq' },
-            { label: '2024 Total', border: 'border-purple', desc: 'Total Qualified Competent 2024', filter: r => r['2024'] == 1 },
-            { label: '2025 Total', border: 'border-orange', desc: 'Total Qualified Competent 2025', filter: r => r['2025'] == 1 },
-        ];
-        sidebar.innerHTML = '';
-        categories.forEach(cat => {
-            const data = PERSONNEL_DATA.filter(cat.filter);
-            const div = document.createElement('div');
-            div.className = `tile ${cat.border}`;
-            div.innerHTML = `<h3>${cat.label}</h3><div class="count">${data.length}</div><div class="desc">${cat.desc}</div>`;
-            div.onclick = () => openModal(cat.label, data);
-            sidebar.appendChild(div);
-        });
-    }
+function renderSidebar() {
+    const categories = [
+        { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not in 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
+        { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not in 2025', filter: r => r['2024'] == 1 && r['2025'] == 0 },
+        { label: 'New Qualified', border: 'border-blue', desc: 'Qualified in 2025 but not in 2024', filter: r => r.movement === 'nq' },
+        { label: 'Disqualified', border: 'border-yellow', desc: 'Qualified in 2024 but not in 2025', filter: r => r.movement === 'dq' },
+        { label: '2024 Total', border: 'border-purple', desc: 'Total Qualified Competent 2024', filter: r => r['2024'] == 1 },
+        { label: '2025 Total', border: 'border-orange', desc: 'Total Qualified Competent 2025', filter: r => r['2025'] == 1 },
+    ];
+
+    sidebar.innerHTML = '';
+    categories.forEach(cat => {
+        const data = PERSONNEL_DATA.filter(cat.filter);
+        const div = document.createElement('div');
+        div.className = `tile ${cat.border}`;
+        
+        // Use a unique ID or class to target the number
+        div.innerHTML = `
+            <h3>${cat.label}</h3>
+            <div class="count" id="count-${cat.label.replace(/\s+/g, '')}">0</div>
+            <div class="desc">${cat.desc}</div>
+        `;
+        
+        div.onclick = () => openModal(cat.label, data);
+        sidebar.appendChild(div);
+
+        // Trigger the shuffle animation
+        const countElement = document.getElementById(`count-${cat.label.replace(/\s+/g, '')}`);
+        animateValue(countElement, 0, data.length, 1000); // 1000ms = 1 second duration
+    });
+}
 
     function renderTable(data) {
         tableBody.innerHTML = '';
