@@ -255,13 +255,19 @@
             </div>
             <span style="cursor:pointer; font-size:2rem" onclick="closeModal()">&times;</span>
         </div>
-        <div style="padding: 15px 20px; border-bottom: 1px solid #eee; background: #fdfdfd;">
-            <input type="text" id="modalSearch" class="search-box" placeholder="Filter this list..." style="width: 100%; box-sizing: border-box;">
+        <div style="padding: 15px 20px; border-bottom: 1px solid #eee; background: #fdfdfd; display: flex; gap: 10px;">
+            <input type="text" id="modalSearch" class="search-box" placeholder="Filter this list..." style="flex: 1;">
+            <button onclick="copyModalTable()" class="btn" style="background-color: var(--info); white-space: nowrap;">Copy Table</button>
         </div>
         <div class="modal-body">
-            <table style="width:100%">
+            <table style="width:100%" id="modalTable">
                 <thead style="background:#f1f1f1">
-                    <tr><th>Name</th><th>Position</th><th>Division</th><th>Group</th></tr>
+                    <tr>
+                        <th style="cursor:pointer; padding: 10px;" onclick="sortModalTable('names')">Name ↕</th>
+                        <th style="cursor:pointer; padding: 10px;" onclick="sortModalTable('position')">Position ↕</th>
+                        <th style="cursor:pointer; padding: 10px;" onclick="sortModalTable('division')">Division ↕</th>
+                        <th style="cursor:pointer; padding: 10px;" onclick="sortModalTable('group')">Group ↕</th>
+                    </tr>
                 </thead>
                 <tbody id="modalTableBody"></tbody>
             </table>
@@ -272,7 +278,7 @@
 <footer>Developed by LAYM HRD Solutions</footer>
 
 <script>
-    // FULL 593 RECORDS DATASET
+    // 1. DATASET & CONFIGURATION
     const PERSONNEL_DATA = [
 
     {
@@ -6210,7 +6216,11 @@
     const tableBody = document.getElementById('tableBody');
     const sidebar = document.getElementById('sidebar');
     const modalOverlay = document.getElementById('modalOverlay');
+    const modalTableBody = document.getElementById('modalTableBody');
+    
     let currentSort = { key: '', asc: true };
+    let modalSort = { key: '', asc: true };
+    let MODAL_ACTIVE_DATA = []; // Holds current filtered/sorted modal list
 
     function init() {
         renderSidebar();
@@ -6218,6 +6228,7 @@
         document.getElementById('totalCountBadge').innerText = `Total Records: ${PERSONNEL_DATA.length}`;
     }
 
+    // 2. HELPER FUNCTIONS
     function getIcons(row) {
         const c24 = row['2024'] == 1 ? '<div class="circle bg-competent" title="Competent">C</div>' : '<div class="circle bg-not" title="Not Competent">N</div>';
         const c25 = row['2025'] == 1 ? '<div class="circle bg-competent" title="Competent">C</div>' : '<div class="circle bg-not" title="Not Competent">N</div>';
@@ -6228,6 +6239,7 @@
         return { c24, c25, mov };
     }
 
+    // 3. MAIN UI RENDERING
     function renderSidebar() {
         const categories = [
             { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not in 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
@@ -6266,23 +6278,67 @@
         });
     }
 
+    // 4. MODAL LOGIC (New Sorting & Copying)
+    function renderM(data) {
+        modalTableBody.innerHTML = data.map(r => `
+            <tr>
+                <td><strong>${r.names}</strong></td>
+                <td>${r.position}</td>
+                <td>${r.division}</td>
+                <td>${r.group}</td>
+            </tr>`).join('');
+    }
+
     function openModal(title, data) {
-        const modalTableBody = document.getElementById('modalTableBody');
         document.getElementById('modalTitle').innerText = title;
         document.getElementById('modalSubtitle').innerText = `Total Count: ${data.length}`;
         modalOverlay.style.display = 'flex';
-        const renderM = (l) => {
-            modalTableBody.innerHTML = l.map(r => `<tr><td><strong>${r.names}</strong></td><td>${r.position}</td><td>${r.division}</td><td>${r.group}</td></tr>`).join('');
-        };
-        renderM(data);
-        document.getElementById('modalSearch').oninput = (e) => {
+        
+        MODAL_ACTIVE_DATA = [...data]; 
+        renderM(MODAL_ACTIVE_DATA);
+
+        const modalSearch = document.getElementById('modalSearch');
+        modalSearch.value = '';
+        modalSearch.oninput = (e) => {
             const v = e.target.value.toLowerCase();
-            renderM(data.filter(r => r.names.toLowerCase().includes(v) || r.position.toLowerCase().includes(v)));
+            MODAL_ACTIVE_DATA = data.filter(r => 
+                r.names.toLowerCase().includes(v) || 
+                r.position.toLowerCase().includes(v) ||
+                r.division.toLowerCase().includes(v)
+            );
+            renderM(MODAL_ACTIVE_DATA);
         };
     }
 
     function closeModal() { modalOverlay.style.display = 'none'; }
-    
+
+    function sortModalTable(key) {
+        if (modalSort.key === key) modalSort.asc = !modalSort.asc;
+        else { modalSort.key = key; modalSort.asc = true; }
+
+        MODAL_ACTIVE_DATA.sort((a, b) => {
+            let vA = (a[key] || "").toString().toLowerCase();
+            let vB = (b[key] || "").toString().toLowerCase();
+            if (vA < vB) return modalSort.asc ? -1 : 1;
+            if (vA > vB) return modalSort.asc ? 1 : -1;
+            return 0;
+        });
+        renderM(MODAL_ACTIVE_DATA);
+    }
+
+    function copyModalTable() {
+        if (MODAL_ACTIVE_DATA.length === 0) return alert("No data to copy");
+        let content = "Name\tPosition\tDivision\tGroup\n";
+        content += MODAL_ACTIVE_DATA.map(r => 
+            `${r.names}\t${r.position}\t${r.division}\t${r.group}`
+        ).join("\n");
+
+        navigator.clipboard.writeText(content).then(() => {
+            alert("Table copied to clipboard! You can now paste it into Excel.");
+        }).catch(err => { console.error('Error copying: ', err); });
+    }
+
+    // 5. EVENT LISTENERS & SORTING
     function sortTable(key) {
         if (currentSort.key === key) currentSort.asc = !currentSort.asc;
         else { currentSort.key = key; currentSort.asc = true; }
@@ -6298,11 +6354,18 @@
     document.getElementById('globalSearch').addEventListener('input', (e) => {
         const val = e.target.value.toLowerCase();
         const filtered = PERSONNEL_DATA.filter(r => 
-            r.names.toLowerCase().includes(val) || r.position.toLowerCase().includes(val) ||
-            r.division.toLowerCase().includes(val) || r.group.toLowerCase().includes(val)
+            r.names.toLowerCase().includes(val) || 
+            r.position.toLowerCase().includes(val) ||
+            r.division.toLowerCase().includes(val) || 
+            r.group.toLowerCase().includes(val)
         );
         renderTable(filtered);
     });
+
+    // Close modal when clicking background
+    window.onclick = function(event) {
+        if (event.target == modalOverlay) closeModal();
+    }
 
     init();
 </script>
