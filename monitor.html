@@ -6265,13 +6265,14 @@ function animateValue(obj, start, end, duration) {
     // 3. MAIN UI RENDERING
 function renderSidebar() {
     const categories = [
-        { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not in 2024', filter: r => r['2025'] == 1 && r['2024'] == 0 },
-        { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not in 2025', filter: r => r['2024'] == 1 && r['2025'] == 0 },
+        { label: 'New', border: 'border-green', desc: 'Competent in 2025 but not in 2024 excluding New Qualified', filter: r => r['2025'] == 1 && r['2024'] == 0 },
+        { label: 'Regressed', border: 'border-red', desc: 'Competent in 2024 but not in 2025 including Disqualified', filter: r => r['2024'] == 1 && r['2025'] == 0 },
         { label: 'New Qualified', border: 'border-blue', desc: 'Qualified in 2025 but not in 2024', filter: r => r.movement === 'nq' },
         { label: 'Disqualified', border: 'border-yellow', desc: 'Qualified in 2024 but not in 2025', filter: r => r.movement === 'dq' },
         { label: '2024 Total', border: 'border-purple', desc: 'Total Qualified Competent 2024', filter: r => r['2024'] == 1 },
         { label: '2025 Total', border: 'border-orange', desc: 'Total Qualified Competent 2025', filter: r => r['2025'] == 1 },
     ];
+
 
     sidebar.innerHTML = '';
     categories.forEach(cat => {
